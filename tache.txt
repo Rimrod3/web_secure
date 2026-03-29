@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a2e;
+    --gold: #c9a84c;
+    --gold-light: #e8d5a3;
+    --muted: #7a7a8c;
+    --panel: #ffffff;
+    --error: #c0392b;
+    --ok: #27ae60;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 80%, rgba(201,168,76,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ── Slide container ── */
+  .scene {
+    width: 420px;
+    height: 590px;
+    overflow: hidden;
+    border-radius: 20px;
+    filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5));
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* The two panels sit side-by-side; we slide the wrapper */
+  .slider {
+    width: 200%;
+    height: 100%;
+    display: flex;
+    transition: transform 0.72s cubic-bezier(0.77, 0, 0.175, 1);
+  }
+
+  .slider.show-register {
+    transform: translateX(-50%);
+  }
+
+  .panel {
+    width: 50%;
+    height: 100%;
+    background: var(--panel);
+    padding: 44px 40px 36px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    overflow-y: auto;
+  }
+
+  /* Gold accent bar */
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 40px; right: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+    border-radius: 0 0 3px 3px;
+  }
+
+  /* ── Typography ── */
+  .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    border: 1.5px solid #e0dbd0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: #fafaf7;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+    background: #fff;
+  }
+
+  input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(192,57,43,0.1); }
+  input.valid   { border-color: var(--ok);    box-shadow: 0 0 0 3px rgba(39,174,96,0.1); }
+  input::placeholder { color: #c4bfb3; }
+
+  /* ── Password rules ── */
+  .rules {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 10px;
+  }
+
+  .rule {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.2s;
+  }
+
+  .rule::before {
+    content: '○';
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .rule.ok { color: var(--ok); }
+  .rule.ok::before { content: '●'; color: var(--ok); }
+
+  /* ── Error message ── */
+  .error-msg {
+    font-size: 11.5px;
+    color: var(--error);
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  /* ── Primary button ── */
+  .btn-primary {
+    margin-top: 10px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(26,26,46,0.22); }
+  .btn-primary:hover::after { opacity: 1; }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── Switch link ── */
+  .switch-link {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .switch-link button {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 0;
+    transition: color 0.15s;
+  }
+  .switch-link button:hover { color: #a8853a; }
+
+  .forgot { text-align: right; margin-top: 5px; }
+  .forgot button {
+    background: none; border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px; color: var(--muted);
+    cursor: pointer; padding: 0;
+    transition: color 0.15s;
+  }
+  .forgot button:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="slider" id="slider">
+
+    <!-- ══════════ LOGIN ══════════ -->
+    <div class="panel">
+      <div class="brand">✦ Lumière</div>
+      <h1>Welcome<br>back.</h1>
+      <p class="subtitle">Sign in with your username &amp; password.</p>
+
+      <div class="field">
+        <label>Username</label>
+        <input id="login-user" type="text" placeholder="your_username" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="forgot"><button type="button">Forgot password?</button></div>
+      </div>
+
+      <div class="error-msg" id="login-error"></div>
+
+      <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+
+      <div class="switch-link">
+        No account yet? <button type="button" onclick="showRegister()">Create one</button>
+      </div>
+    </div>
+
+    <!-- ══════════ REGISTER ══════════ -->
+    <div class="panel">
+      <div class="brand">✦ Lumière</div>
+      <h1>Join us<br>today.</h1>
+      <p class="subtitle">Create your account in seconds.</p>
+
+      <div class="field">
+        <label>Username</label>
+        <input id="reg-user" type="text" placeholder="choose_a_username" autocomplete="username" oninput="validateRegForm()">
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" oninput="validateRegForm()">
+        <div class="error-msg" id="email-error"></div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input id="reg-pass" type="password" placeholder="Strong password" autocomplete="new-password" oninput="validateRegForm()">
+        <div class="rules">
+          <span class="rule" id="r-len">12 characters min</span>
+          <span class="rule" id="r-upper">Uppercase letter</span>
+          <span class="rule" id="r-num">Number</span>
+          <span class="rule" id="r-special">Special character</span>
+          <span class="rule" id="r-nouser" style="grid-column:1/-1">Not contain username</span>
+        </div>
+      </div>
+
+      <div class="error-msg" id="reg-error"></div>
+
+      <button class="btn-primary" onclick="handleRegister()">Create Account</button>
+
+      <div class="switch-link">
+        Already have an account? <button type="button" onclick="showLogin()">Sign in</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function showRegister() {
+    document.getElementById('slider').classList.add('show-register');
+  }
+  function showLogin() {
+    document.getElementById('slider').classList.remove('show-register');
+  }
+
+  /* ── Login ── */
+  function handleLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    const err  = document.getElementById('login-error');
+
+    if (!user || !pass) {
+      err.textContent = 'Please fill in both fields.';
+      return;
+    }
+    err.textContent = '';
+    alert(`Signing in as "${user}" …`);
+  }
+
+  /* ── Password rules ── */
+  function checkRules(pass, username) {
+    return {
+      len:     pass.length >= 12,
+      upper:   /[A-Z]/.test(pass),
+      num:     /[0-9]/.test(pass),
+      special: /[^A-Za-z0-9]/.test(pass),
+      nouser:  username.length === 0 || !pass.toLowerCase().includes(username.toLowerCase())
+    };
+  }
+
+  function validateRegForm() {
+    const username = document.getElementById('reg-user').value.trim();
+    const pass     = document.getElementById('reg-pass').value;
+    const email    = document.getElementById('reg-email').value.trim();
+    const r        = checkRules(pass, username);
+
+    setRule('r-len',     r.len);
+    setRule('r-upper',   r.upper);
+    setRule('r-num',     r.num);
+    setRule('r-special', r.special);
+    setRule('r-nouser',  r.nouser);
+
+    const passInput = document.getElementById('reg-pass');
+    if (pass.length > 0) {
+      const allOk = r.len && r.upper && r.num && r.special && r.nouser;
+      passInput.classList.toggle('valid',   allOk);
+      passInput.classList.toggle('invalid', !allOk);
+    } else {
+      passInput.classList.remove('valid', 'invalid');
+    }
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const emailEl = document.getElementById('reg-email');
+    if (email.length > 0) {
+      emailEl.classList.toggle('valid',   emailOk);
+      emailEl.classList.toggle('invalid', !emailOk);
+      document.getElementById('email-error').textContent = emailOk ? '' : 'Enter a valid email address.';
+    } else {
+      emailEl.classList.remove('valid', 'invalid');
+      document.getElementById('email-error').textContent = '';
+    }
+  }
+
+  function setRule(id, ok) {
+    document.getElementById(id).classList.toggle('ok', ok);
+  }
+
+  /* ── Register submit ── */
+  function handleRegister() {
+    const username = document.getElementById('reg-user').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const pass     = document.getElementById('reg-pass').value;
+    const err      = document.getElementById('reg-error');
+
+    if (!username) { err.textContent = 'Please choose a username.'; return; }
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk)  { err.textContent = 'Please enter a valid email.'; return; }
+
+    const r = checkRules(pass, username);
+    if (!r.len)     { err.textContent = 'Password must be at least 12 characters.'; return; }
+    if (!r.upper)   { err.textContent = 'Password must contain an uppercase letter.'; return; }
+    if (!r.num)     { err.textContent = 'Password must contain a number.'; return; }
+    if (!r.special) { err.textContent = 'Password must contain a special character.'; return; }
+    if (!r.nouser)  { err.textContent = 'Password must not contain your username.'; return; }
+
+    err.textContent = '';
+    alert(`Account created for "${username}" — welcome!`);
+  }
+</script>
+</body>
+</html>

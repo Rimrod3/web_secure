@@ -1,0 +1,23 @@
+# Fichiers de configuration locaux
+.env
+
+# Dépendances (gérées par Composer)
+/vendor/
+
+# Fichiers système et de l'IDE
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Logs
+app.log
+
+# Certificats et clés SSL/TLS
+*.crt
+*.key
+*.srl
+
+# Scripts utilitaires
+create_user.php

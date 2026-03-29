@@ -1,0 +1,89 @@
+# GUIDE DES COMMANDES - PROJET WEB SÉCURISÉ (MVC / PHP / SSL)
+
+Ce fichier récapitule les commandes nécessaires pour initialiser, sécuriser et maintenir ce projet.
+
+---
+
+## 1. INITIALISATION DU PROJET
+
+### Création de la structure MVC
+mkdir -p src/{Controllers,Models,Views,Middleware,Util} js css video
+
+### Initialisation de Composer (Gestion des dépendances)
+composer init
+composer require firebase/php-jwt vlucas/phpdotenv
+composer dump-autoload
+
+---
+
+## 2. GÉNÉRATION DES CERTIFICATS SSL (CHAIN OF TRUST)
+
+### Génération du certificat d'autorité (Root CA / Server principal)
+# (Permet l'accès HTTPS et sert de CA pour la base de données)
+openssl genrsa -out server.key 2048
+openssl req -new -x509 -key server.key -out server.crt -days 365 -subj "/C=FR/ST=IDF/L=Ivry-sur-Seine/O=ESIEA/OU=Cyber/CN=esiea_ayissi"
+
+### Génération du certificat pour le serveur MySQL (signé par server.crt)
+openssl genrsa -out mysql-server.key 2048
+openssl req -new -key mysql-server.key -out mysql-server.csr -subj "/C=FR/ST=IDF/L=Ivry-sur-Seine/O=ESIEA/OU=Cyber/CN=mysql_server"
+openssl x509 -req -in mysql-server.csr -CA server.crt -CAkey server.key -CAcreateserial -out mysql-server.crt -days 365 -sha256
+
+### Génération du certificat client pour l'application PHP (signé par server.crt)
+openssl genrsa -out mysql-client.key 2048
+openssl req -new -key mysql-client.key -out mysql-client.csr -subj "/C=FR/ST=IDF/L=Ivry-sur-Seine/O=ESIEA/OU=Cyber/CN=mysql_client"
+openssl x509 -req -in mysql-client.csr -CA server.crt -CAkey server.key -CAcreateserial -out mysql-client.crt -days 365 -sha256
+
+---
+
+## 3. CONFIGURATION SERVEUR (HARDENING)
+
+### Permissions de fichiers (Restrictives)
+# Donner la propriété à l'utilisateur web (souvent www-data sur Linux)
+sudo chown -R www-data:www-data /var/www/html/Web_securite
+# Sécuriser les clés privées (Lecture seule par le propriétaire)
+chmod 600 *.key .env
+
+### Configuration MySQL pour SSL (/etc/mysql/my.cnf ou /etc/mysql/mariadb.conf.d/50-server.cnf)
+# Ajouter ces lignes dans la section [mysqld] :
+# ssl-ca=/var/www/html/Web_securite/server.crt
+# ssl-cert=/var/www/html/Web_securite/mysql-server.crt
+# ssl-key=/var/www/html/Web_securite/mysql-server.key
+# require_secure_transport = ON
+
+---
+
+## 4. BASE DE DONNÉES (SQL)
+
+### Création de la structure (Exemple MariaDB/MySQL)
+# mysql -u root -p
+CREATE DATABASE web_securite;
+USE web_securite;
+
+CREATE TABLE utilisateurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pseudo VARCHAR(50) UNIQUE NOT NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    role ENUM('user', 'admin') DEFAULT 'user',
+    est_certifie BOOLEAN DEFAULT 0
+);
+
+CREATE TABLE logs_connexions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    adresse_ip VARCHAR(45) NOT NULL,
+    pseudo VARCHAR(50),
+    statut ENUM('SUCCESS', 'FAILURE') NOT NULL,
+    date_tentative TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+---
+
+## 5. DIAGNOSTIC & SÉCURITÉ
+
+### Vérifier le hash d'un mot de passe Argon2id via PHP CLI
+php -r "echo password_hash('votre_mdp', PASSWORD_ARGON2ID);"
+
+### Vérifier la validité d'un certificat
+openssl x509 -in server.crt -text -noout
+
+### Tester la redirection HTTPS (Curl)
+curl -I http://localhost/Web_securite/

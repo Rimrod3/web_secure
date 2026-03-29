@@ -1,0 +1,134 @@
+esiea_ayissi is the server name
+connection avec https://esiea_ayissi/login.php
+username : admin    
+passwd : admin
+
+ajouter un mode ave la certif en bleu
+troteling
+
+On a besoin de la meme authorite mais pas du meme certificat pour la db et le site
+ pas de bcypte 
+
+Tache:
+
+temsp d'expiration des token $expirationtime a 3600 actuelement.
+
+ne pas oublier de forcer le https pour le debug plus simple lors du test de compte d'avoir du http
+
+/////////////////////////
+what we have to do :
+Cours 1  
+
+https et certifiact auto-signer 
+
+Iframe pas accepter . 
+
+  
+
+Cours 2 creation des authenetification : 
+
+https  
+
+session  
+
+tokent : date d’expiration qui expire. Utiliser dans les app web pour interroger plusieuer service pour un user.  (les token ytb n’expire jamais ) 
+
+  
+
+  
+
+Hashage des mdp en BDD. Se protéger du brute force. 
+
+Protection 1 mdp hasher &2 capchat : 
+
+Fonction qui sécuriser un mot de passe. La sortie est toujours la même donc si un on veut brute force il faut hasher et faire une attaque par dictionnaire de hash. 
+
+On va sécuriser le hashage. On ajoute un prefixxe et un suffixe  au mot de passe avant de le hasher. Si le psswd est toto on va hasher prefixe+toto+suffixe. Pour que le mot de passe soit encore plus securiser.les prefixe et suffixe doit être connu uniquement du server. 
+
+MD5= très rapide donc toute les combinaisons on été fait donc plus très sécuriser. 
+
+Sha1, sha256,512 meme problemes 
+
+Bcrypt est lent donc il est pas encore calculer. On ralenti le server pour la sécurité. 
+
+Probleme de sécurité si il y a quelque année les mdp stocker en md5. Et ne sont pas renouveler avec un cyptage different donc les mdp sont vulnerable. 
+
+COMPLEXITER DE MOT DE PASSE MINIMUM.  
+
+langage d’expression reguliere.  Regex101.com regle de complexiter . 
+
+Guide authentification et mot de passe anssi. Il faut vérifier coter server et aussi dire coter client control de surface. 
+
+Limiter le nombre d’essaie.trotling et/ou capchat. 
+
+Protection 3 CSRF OBLIGATOIRE: 
+
+Protection de formulaire csrf. 
+
+On envoie un formulaire avec un token csrf qui affirme l’existance (le token est cree avec un aleatoire qui doit être nonperdictible(aleatoire + hasage ) ) avec cette valeur on va la stoker dans la session pour que une fois le formulaire remplit et revoyer on puisse vérifier que ce formulaire soit celui qui j’ai envoyé et pas un autre d’un autre site web.  
+
+  
+
+  
+
+Control d’entree pour les algo metier (parfait). Il faut considérer que les bases de données n’ont pas forcement la forme voulut. Le resultat n’est pas ceui attendu alors que la données est la bonne. 
+
+Contrôle de sortie pour faire en sorte que le resultat d’une action doit être la bonne. 
+
+On doit pouvoir conciderer le code  avec la partie principale le corp de celle-ci avec control a l’entre , la sortie et la forme que doivent avoir. 
+
+Control d’entree : 
+
+Type ? 2 
+
+Taille/longeure ? 3 
+
+Motifs ? (comparaison )4 
+
+Existance ? 1 
+
+Limites ? 3 
+
+Ce sont des vérification fonctionnel. On doit faire ca en fonction de ce qui est le moins couteuex en preformence. (ordre qui est donner a coter. )Ca va nous permettre d’economiser  de la puissance pour que ca soit efficace. 
+
+Il faut verifier les sorties de la base de donne car la base de donne peux être verroler. 
+
+Contrôle de sortie  
+
+On va faire une convertion de code html en html. Pour être sur que c’est du html . Pour des image style photo de profile est copier bits par bits et convertir en un autre format pour être sur que c’est une image 
+
+Convertion forcee des variables utilisees dans le code sql en valeurs.(requête preparer) 
+
+  
+
+Architecture model view contrôler   
+
+Point d’entre (user) -> control des entrée -> algo -> contrôle des sortie-> affichage) 
+
+Model qui a un fichier par table 
+
+Contrôler 1 fichier  par contrôleur chaque contrôler a une ou plusieurs action 
+
+View 1 dossier par controleur  et 1 fichier par action 
+
+Racine  il y a un sous dossier avec le point d’entre pour qu’il sache quel controleur on doit appeler et quel action il doit faire 
+
+On appel routeur le point d’entree car il va rediriger chaque demande vers le controler associer. Un attaquant ne peut pas aller chercher une page special il doit donee le controler ou l’action. 
+
+  
+
+Cours 3 
+
+Journalisation des tentativvese de connexion 
+
+Compte pour lequel la tentative a été faite 
+
+Ip du clinet , user angent 
+
+Date/heure,minutes,secondes de la tentative 
+
+Identifiants de session ou jeton . 
+
+Pour avoir la provenance des ip MAXmino geolite 2 
+
+ 
