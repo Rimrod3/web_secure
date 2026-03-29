@@ -11,21 +11,24 @@ use Firebase\JWT\Key;
 use Exception;
 
 class AuthController extends BaseController {
-    
+
     private $userModel;
 
     public function __construct() {
         $this->userModel = new User();
-        
+
         if (session_status() === PHP_SESSION_NONE) {
-            $is_secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-            session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax', 'cookie_path' => '/', 'cookie_secure' => $is_secure]);
+            $is_secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+                      || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+            session_start([
+                'cookie_httponly' => true,
+                'cookie_samesite' => 'Lax',
+                'cookie_path'     => '/',
+                'cookie_secure'   => $is_secure,
+            ]);
         }
     }
 
-    /**
-     * Displays the main authentication page (which contains both login and register forms).
-     */
     public function loginForm() {
         if ($this->isLoggedIn()) {
             $this->redirect('/');
@@ -35,42 +38,40 @@ class AuthController extends BaseController {
         $this->view('auth/login', ['csrf_token' => $csrf_token]);
     }
 
-    /**
-     * Handles the AJAX login request.
-     */
     public function login() {
-        $data = json_decode(file_get_contents('php://input'), true);
-        $this->verifyCsrfToken($data['csrf_token'] ?? '');
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        // Pass the token from the JSON body explicitly
+        $this->verifyCsrfToken($data['csrf_token'] ?? null);
 
         $pseudo = Validator::validatePseudo($data['pseudo'] ?? '');
-        $mdp = $data['mdp'] ?? '';
+        $mdp    = $data['mdp'] ?? '';
 
         if (!$pseudo || empty($mdp)) {
             $this->jsonError('Invalid username or password.', 401);
         }
 
         $user = $this->userModel->findByPseudo($pseudo);
-        
+
         if ($user && password_verify($mdp, $user['mot_de_passe'])) {
             Logger::info('User login successful.', ['pseudo' => $pseudo]);
             $this->createJwtSession($user);
             $this->jsonSuccess(['redirect' => '/']);
         } else {
-            Logger::warning('User login failed: Invalid credentials.', ['pseudo' => $pseudo]);
+            Logger::warning('Login failed.', ['pseudo' => $pseudo]);
             $this->jsonError('Invalid username or password.', 401);
         }
     }
 
-    /**
-     * Handles the AJAX registration request.
-     */
     public function register() {
-        $data = json_decode(file_get_contents('php://input'), true);
-        $this->verifyCsrfToken($data['csrf_token'] ?? '');
-        
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        // Pass the token from the JSON body explicitly
+        $this->verifyCsrfToken($data['csrf_token'] ?? null);
+
         $pseudo = Validator::validatePseudo($data['pseudo'] ?? '');
-        $email = Validator::validateEmail($data['email'] ?? '');
-        $mdp = $data['mdp'] ?? '';
+        $email  = Validator::validateEmail($data['email'] ?? '');
+        $mdp    = $data['mdp'] ?? '';
 
         if (!$pseudo || !$email || empty($mdp)) {
             $this->jsonError('Please fill in all fields correctly.', 400);
@@ -84,20 +85,20 @@ class AuthController extends BaseController {
             $this->jsonError('This email address is already in use.', 409);
         }
 
-        $passwordSecurity = $this->verifierSecuriteMotDePasse($mdp, $pseudo);
-        if (!$passwordSecurity['valid']) {
-            $this->jsonError($passwordSecurity['message'], 400);
+        $passwordCheck = $this->verifierSecuriteMotDePasse($mdp, $pseudo);
+        if (!$passwordCheck['valid']) {
+            $this->jsonError($passwordCheck['message'], 400);
         }
 
         $mdp_hache = password_hash($mdp, PASSWORD_ARGON2ID);
 
         try {
             $this->userModel->create($pseudo, $email, null, $mdp_hache);
-            Logger::info('New user registered successfully.', ['pseudo' => $pseudo, 'email' => $email]);
+            Logger::info('New user registered.', ['pseudo' => $pseudo]);
             $this->jsonSuccess(['message' => 'Registration successful! You can now log in.']);
         } catch (\PDOException $e) {
-            Logger::error('Database error during user creation.', ['error' => $e->getMessage()]);
-            $this->jsonError('A database error occurred.', 500);
+            Logger::error('DB error during registration.', ['error' => $e->getMessage()]);
+            $this->jsonError('A database error occurred. Please try again.', 500);
         }
     }
 
@@ -118,27 +119,45 @@ class AuthController extends BaseController {
     }
 
     private function createJwtSession(array $user): void {
-        $secret_key = Config::getSecretKey();
-        $issued_at = time();
-        $expiration_time = $issued_at + 3600; // 1 hour
+        $secret_key      = Config::getSecretKey();
+        $issued_at       = time();
+        $expiration_time = $issued_at + 3600;
 
-        $token_payload = [
-            "iss" => "your_app_name", "aud" => "your_app_name", "iat" => $issued_at, "exp" => $expiration_time,
-            "data" => ["id" => $user['id'], "pseudo" => $user['pseudo'], "role" => $user['role']]
+        $payload = [
+            "iss"  => "websecure",
+            "aud"  => "websecure",
+            "iat"  => $issued_at,
+            "exp"  => $expiration_time,
+            "data" => [
+                "id"     => $user['id'],
+                "pseudo" => $user['pseudo'],
+                "role"   => $user['role'],
+            ],
         ];
 
-        $jwt = JWT::encode($token_payload, $secret_key, 'HS256');
-        $is_secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
-        
-        setcookie("jwt_token", $jwt, ['expires' => $expiration_time, 'path' => '/', 'secure' => $is_secure, 'httponly' => true, 'samesite' => 'Strict']);
+        $jwt       = JWT::encode($payload, $secret_key, 'HS256');
+        $is_secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
+        setcookie("jwt_token", $jwt, [
+            'expires'  => $expiration_time,
+            'path'     => '/',
+            'secure'   => $is_secure,
+            'httponly' => true,
+            'samesite' => 'Strict',
+        ]);
     }
 
     private function verifierSecuriteMotDePasse(string $password, string $username): array {
-        if (strlen($password) < 12) return ['valid' => false, 'message' => "Password must be at least 12 characters long."];
-        if (!empty($username) && stripos($password, $username) !== false) return ['valid' => false, 'message' => "Password cannot contain your username."];
-        if (!preg_match('/[a-z]/', $password) || !preg_match('/[A-Z]/', $password)) return ['valid' => false, 'message' => "Password must include uppercase and lowercase letters."];
-        if (!preg_match('/\d/', $password)) return ['valid' => false, 'message' => "Password must include at least one number."];
-        if (!preg_match('/[@$!%*?&]/', $password)) return ['valid' => false, 'message' => "Password must include at least one special symbol (@$!%*?&)."];
-        return ['valid' => true, 'message' => "OK"];
+        if (strlen($password) < 12)
+            return ['valid' => false, 'message' => 'Password must be at least 12 characters long.'];
+        if (!empty($username) && stripos($password, $username) !== false)
+            return ['valid' => false, 'message' => 'Password cannot contain your username.'];
+        if (!preg_match('/[a-z]/', $password) || !preg_match('/[A-Z]/', $password))
+            return ['valid' => false, 'message' => 'Password must include uppercase and lowercase letters.'];
+        if (!preg_match('/\d/', $password))
+            return ['valid' => false, 'message' => 'Password must include at least one number.'];
+        if (!preg_match('/[@$!%*?&]/', $password))
+            return ['valid' => false, 'message' => 'Password must include at least one special symbol (@$!%*?&).'];
+        return ['valid' => true, 'message' => 'OK'];
     }
 }

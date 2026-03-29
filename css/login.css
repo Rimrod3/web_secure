@@ -1,70 +1,269 @@
+/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --ink: #1a1a2e; --gold: #c9a84c; --gold-light: #e8d5a3; --muted: #7a7a8c; --panel: #ffffff; --error: #c0392b; --ok: #27ae60;
-  }
-  body {
-    font-family: 'DM Sans', sans-serif; background: var(--ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden;
-  }
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background: radial-gradient(ellipse 80% 60% at 20% 80%, rgba(201,168,76,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 60%);
-    pointer-events: none;
-  }
-  .scene {
-    width: 420px; height: 620px; overflow: hidden; border-radius: 20px; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5));
-    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
-  }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-  .slider {
-    width: 200%; height: 100%; display: flex; transition: transform 0.72s cubic-bezier(0.77, 0, 0.175, 1);
-  }
-  .slider.show-register { transform: translateX(-50%); }
-  .panel {
-    width: 50%; height: 100%; background: var(--panel); padding: 44px 40px 36px; display: flex; flex-direction: column; flex-shrink: 0; position: relative; overflow-y: auto;
-  }
-  .panel::before {
-    content: ''; position: absolute; top: 0; left: 40px; right: 40px; height: 3px;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold)); border-radius: 0 0 3px 3px;
-  }
-  .brand {
-    font-family: 'Playfair Display', serif; font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 28px;
-  }
-  h1 {
-    font-family: 'Playfair Display', serif; font-size: 32px; color: var(--ink); line-height: 1.15; margin-bottom: 6px;
-  }
-  .subtitle {
-    font-size: 13.5px; color: var(--muted); margin-bottom: 28px; font-weight: 300;
-  }
-  .field { margin-bottom: 14px; }
-  label {
-    display: block; font-size: 10.5px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
-  }
-  input {
-    width: 100%; border: 1.5px solid #e0dbd0; border-radius: 10px; padding: 12px 14px; font-family: 'DM Sans', sans-serif;
-    font-size: 14.5px; color: var(--ink); background: #fafaf7; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  }
-  input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); background: #fff; }
-  input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(192,57,43,0.1); }
-  input.valid   { border-color: var(--ok);    box-shadow: 0 0 0 3px rgba(39,174,96,0.1); }
-  input::placeholder { color: #c4bfb3; }
-  .rules { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
-  .rule { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; transition: color 0.2s; }
-  .rule::before { content: '○'; font-size: 10px; flex-shrink: 0; transition: color 0.2s; }
-  .rule.ok { color: var(--ok); }
-  .rule.ok::before { content: '●'; color: var(--ok); }
-  .error-msg, .success-msg { font-size: 12px; min-height: 20px; text-align:center; padding: 5px; border-radius: 6px; margin-bottom:10px; }
-  .error-msg { color: var(--error); background: rgba(192,57,43,0.08); }
-  .success-msg { color: var(--ok); background: rgba(39,174,96,0.1); }
-  .btn-primary {
-    margin-top: 10px; width: 100%; padding: 14px; border: none; border-radius: 10px; background: var(--ink); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14.5px; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .btn-primary::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, transparent 60%); opacity: 0; transition: opacity 0.2s; }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(26,26,46,0.22); }
-  .btn-primary:hover::after { opacity: 1; }
-  .btn-primary:active { transform: translateY(0); }
-  .switch-link { margin-top: 18px; text-align: center; font-size: 13px; color: var(--muted); }
-  .switch-link button { background: none; border: none; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 0; transition: color 0.15s; }
-  .switch-link button:hover { color: #a8853a; }
-  .forgot { text-align: right; margin-top: 5px; }
-  .forgot button { background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 11.5px; color: var(--muted); cursor: pointer; padding: 0; transition: color 0.15s; }
-  .forgot button:hover { color: var(--gold); }
+
+:root {
+  --ink: #1a1a2e;
+  --gold: #c9a84c;
+  --gold-light: #e8d5a3;
+  --muted: #7a7a8c;
+  --panel: #ffffff;
+  --error: #c0392b;
+  --ok: #27ae60;
+}
+
+/*
+ * Override style.css body rules for the login page only.
+ * style.css sets opacity:0, background:#f0f2f5, font-family:Segoe UI — 
+ * we need to undo all of that for the dark auth page.
+ */
+body {
+  font-family: Georgia, 'Times New Roman', serif; /* fallback — no Google Fonts */
+  background: var(--ink) !important;
+  background-color: var(--ink) !important;
+  min-height: 100vh;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* Keep the opacity/fade-in from style.css — transitions.js handles it */
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(201,168,76,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scene: clips horizontally, height auto so nothing is cut ── */
+.scene {
+  position: relative;
+  z-index: 1;
+  width: 420px;
+  /* NO fixed height — lets each panel define its own height */
+  overflow: hidden;
+  border-radius: 20px;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5));
+  animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Slider ── */
+.slider {
+  width: 200%;
+  display: flex;
+  align-items: flex-start; /* panels size to their own content */
+  transition: transform 0.72s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.slider.show-register {
+  transform: translateX(-50%);
+}
+
+/* ── Each panel ── */
+.panel {
+  width: 50%; /* = scene width */
+  background: var(--panel);
+  padding: 44px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  /* NO height:100%, NO overflow-y:auto — let content breathe */
+}
+
+/* Gold accent bar */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 40px; right: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  border-radius: 0 0 3px 3px;
+}
+
+/* ── Typography ── */
+.brand {
+  font-family: Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+}
+
+h1 {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-weight: 300;
+}
+
+/* ── Fields ── */
+.field { margin-bottom: 14px; }
+
+label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--ink);
+  background: #fafaf7;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+  background: #fff;
+}
+
+input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(192,57,43,0.1); }
+input.valid   { border-color: var(--ok);    box-shadow: 0 0 0 3px rgba(39,174,96,0.1); }
+input::placeholder { color: #c4bfb3; }
+
+/* ── Password rules grid ── */
+.rules {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+}
+
+.rule {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s;
+}
+
+.rule::before {
+  content: '○';
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.rule.ok { color: var(--ok); }
+.rule.ok::before { content: '●'; color: var(--ok); }
+
+/* ── Messages ── */
+.error-msg {
+  font-size: 11.5px;
+  color: var(--error);
+  background: rgba(192,57,43,0.07);
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-top: 4px;
+  min-height: 20px;
+  text-align: center;
+}
+
+.success-msg {
+  font-size: 12px;
+  color: var(--ok);
+  background: rgba(39,174,96,0.08);
+  border: 1px solid rgba(39,174,96,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+/* ── Primary button ── */
+.btn-primary {
+  margin-top: 10px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(26,26,46,0.22); }
+.btn-primary:hover::after { opacity: 1; }
+.btn-primary:active { transform: translateY(0); }
+
+/* ── Switch link ── */
+.switch-link {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.switch-link button {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+  transition: color 0.15s;
+}
+.switch-link button:hover { color: #a8853a; }
+
+/* ── Forgot password ── */
+.forgot { text-align: right; margin-top: 5px; }
+.forgot button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.forgot button:hover { color: var(--gold); }
